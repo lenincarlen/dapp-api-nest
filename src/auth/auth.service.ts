@@ -25,25 +25,11 @@ export class AuthService {
     private roleRepository: Repository<Role>,
   ) { }
 
-<<<<<<< HEAD
-  async register({ name, email, password }: RegisterDto) {
-    const user = await this.usersService.findOneByEmail(email);
-
-    if (user) {
-      throw new BadRequestException('El usuario ya existe');
-    }
-
-    await this.usersService.create({
-      name,
-      email,
-      password: await bcryptjs.hash(password, 10),
-=======
   async register(registerDto: RegisterDto) {
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
     const user = await this.usersService.create({
       ...registerDto,
       password: hashedPassword,
->>>>>>> 815bcaf (Clean commit without .env or secrets)
     });
 
     // Asignar rol de propietario por defecto
@@ -78,11 +64,7 @@ export class AuthService {
   async login(email: string, pass: string): Promise<any> {
     const user = await this.usersService.findByEmailWithPassword(email);
     if (!user) {
-<<<<<<< HEAD
-      throw new UnauthorizedException('El email no es valido');
-=======
       throw new UnauthorizedException('Credenciales incorrectas');
->>>>>>> 815bcaf (Clean commit without .env or secrets)
     }
     const isMatch = await bcrypt.compare(pass, user.password);
     if (!isMatch) {

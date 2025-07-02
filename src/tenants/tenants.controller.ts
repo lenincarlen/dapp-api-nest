@@ -3,10 +3,6 @@ import { TenantsService } from './tenants.service';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
 import { ApiBearerAuth } from '@nestjs/swagger';
-<<<<<<< HEAD
-
-@ApiBearerAuth()
-=======
 import { AuthGuard } from '../auth/guard/auth.guard';
 import { RolesGuard } from '../auth/guard/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -16,7 +12,6 @@ import { UserActiveInterface } from '../common/interfaces/user-active.interface'
 @ApiBearerAuth()
 @UseGuards(AuthGuard, RolesGuard)
 @Roles('owner', 'admin')
->>>>>>> 815bcaf (Clean commit without .env or secrets)
 @Controller('tenants')
 export class TenantsController {
   constructor(private readonly tenantsService: TenantsService) { }

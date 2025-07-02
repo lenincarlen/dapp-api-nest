@@ -23,7 +23,7 @@ export class ContractsService {
       updated_at: new Date(),
     });
 
-    const savedContract = await this.contractsRepository.save(newContract);
+    const savedContract: Contracts = await this.contractsRepository.save(newContract);
 
     // Generar rentas mensuales automáticamente
     if (savedContract.status === 'active') {
@@ -72,10 +72,10 @@ export class ContractsService {
       ...updateContractDto,
       security_deposit: updateContractDto.security_deposit !== undefined ? updateContractDto.security_deposit : contract.security_deposit,
       monthly_maintenance: updateContractDto.monthly_maintenance !== undefined ? updateContractDto.monthly_maintenance : contract.monthly_maintenance,
-      updated_at: new Date().toISOString(),
+      updated_at: new Date(),
     };
 
-    return await this.contractsRepository.save(updatedContract);
+    return await this.contractsRepository.save(updatedContract as Contracts);
   }
 
   async remove(id: string): Promise<void> {

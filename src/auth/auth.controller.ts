@@ -31,20 +31,11 @@ export class AuthController {
     return this.authService.register(registerDto);
   }
 
-<<<<<<< HEAD
-  @Post('sign-in')
-  login(
-    @Body()
-    loginDto: LoginDto,
-  ) {
-    return this.authService.login(loginDto);
-=======
   @HttpCode(HttpStatus.OK)
   @Public()
   @Post('login')
   signIn(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto.email, loginDto.password);
->>>>>>> 815bcaf (Clean commit without .env or secrets)
   }
 
   @Get('profile')

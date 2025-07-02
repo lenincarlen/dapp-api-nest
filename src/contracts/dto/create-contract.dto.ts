@@ -1,4 +1,5 @@
-import { IsString, IsNotEmpty, IsUUID, IsDateString, IsNumber, Min, IsEnum, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsUUID, IsDateString, IsNumber, Min, IsEnum, IsOptional, IsDate } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export enum ContractStatus {
   ACTIVE = 'active',
@@ -27,13 +28,15 @@ export class CreateContractDto {
   @IsNotEmpty()
   property_id: string;
 
-  @IsDateString()
+  @Type(() => Date)
+  @IsDate()
   @IsNotEmpty()
-  start_date: string;
+  start_date: Date;
 
-  @IsDateString()
+  @Type(() => Date)
+  @IsDate()
   @IsNotEmpty()
-  end_date: string;
+  end_date: Date;
 
   @IsNumber()
   @IsNotEmpty()

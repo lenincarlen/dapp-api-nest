@@ -15,11 +15,11 @@ export class Contracts {
   @Column()
   property_id: string;
 
-  @Column()
-  start_date: string;
+  @Column('date')
+  start_date: Date;
 
-  @Column()
-  end_date: string;
+  @Column('date')
+  end_date: Date;
 
   @Column('decimal', { precision: 10, scale: 2 })
   amount: number;

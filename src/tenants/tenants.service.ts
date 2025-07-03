@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateTenantDto } from './dto/create-tenant.dto';
@@ -164,6 +165,35 @@ export class TenantsService {
 
     await this.tenantRepository.remove(tenant);
     return { message: `Tenant with ID "${id}" successfully removed` };
+  }
+
+  /**
+   * Genera una contraseña aleatoria segura
+   */
+  async findByUserId(userId: string): Promise<Tenant> {
+    const tenant = await this.tenantRepository.findOne({
+      where: { user_id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        gov_id: true,
+        birth_date: true,
+        income: true,
+        notes: true,
+        owner_id: true,
+        user_id: true,
+        created_at: true,
+        updated_at: true
+      }
+    });
+
+    if (!tenant) {
+      throw new NotFoundException(`Tenant with User ID "${userId}" not found`);
+    }
+
+    return tenant;
   }
 
   /**

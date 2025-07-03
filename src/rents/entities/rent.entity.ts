@@ -75,4 +75,7 @@ export class Rents {
 
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   daily_late_fee: number;
+
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  display_amount: number;
 }

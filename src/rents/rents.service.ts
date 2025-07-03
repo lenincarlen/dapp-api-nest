@@ -130,6 +130,7 @@ export class RentsService {
         billing_cycle_end: billingCycleEnd,
         days_late: 0,
         daily_late_fee: dailyLateFee,
+        display_amount: 0,
       });
 
       rents.push(rent);
@@ -179,12 +180,22 @@ export class RentsService {
       const previousBalance = previousRent ? previousRent.accumulated_balance : 0;
       const accumulatedBalance = previousBalance + rent.total_due + lateFees;
 
+      let displayAmount = 0;
+      if (rent.paid_at) {
+        displayAmount = 0;
+      } else if (newStatus === RentStatus.DUE || newStatus === RentStatus.LATE || newStatus === RentStatus.OVERDUE) {
+        displayAmount = accumulatedBalance;
+      } else {
+        displayAmount = 0;
+      }
+
       await this.rentsRepository.update(rent.id, {
         status: newStatus,
         days_until_due: daysUntilDue,
         days_late: daysLate,
         late_fees: lateFees,
         accumulated_balance: accumulatedBalance,
+        display_amount: displayAmount,
         updated_at: new Date(),
       });
     }

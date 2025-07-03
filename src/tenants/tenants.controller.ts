@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, ForbiddenException } from '@nestjs/common';
 import { TenantsService } from './tenants.service';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
@@ -72,6 +72,24 @@ export class TenantsController {
       success: true,
       data: tenant,
       message: 'Tenant updated successfully'
+    };
+  }
+
+  @Get('user/:userId')
+  @Roles('tenant', 'owner', 'admin') // Allow tenants to fetch their own tenant ID
+  async findByUserId(
+    @Param('userId') userId: string,
+    @ActiveUser() user: UserActiveInterface
+  ) {
+    // Ensure the user is only fetching their own tenant ID unless they are an admin or owner
+    if (user.sub !== userId && user.role !== 'admin' && user.role !== 'owner') {
+      throw new ForbiddenException('You can only view your own tenant information');
+    }
+    const tenant = await this.tenantsService.findByUserId(userId);
+    return {
+      success: true,
+      data: tenant,
+      message: 'Tenant retrieved successfully by user ID'
     };
   }
 

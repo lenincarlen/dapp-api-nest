@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException, Inject, forwardRef } from '@nestjs/common';
-import { Injectable, NotFoundException, ForbiddenException, Inject, forwardRef } from '@nestjs/common';
+import { DeepPartial } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateTenantDto } from './dto/create-tenant.dto';
@@ -25,16 +25,18 @@ export class TenantsService {
     private emailService: EmailService,
   ) { }
 
-  async create(createTenantDto: CreateTenantDto, currentUserId: string): Promise<Tenant> {
+  async create(createTenantDto: CreateTenantDto, currentUserId?: string): Promise<Tenant> {
     console.log('🔍 TenantsService.create - currentUserId:', currentUserId);
     console.log('🔍 TenantsService.create - DTO:', createTenantDto);
 
-    // Verificar que el usuario actual existe
-    const user = await this.userRepository.findOne({ where: { id: currentUserId } });
-    console.log('🔍 TenantsService.create - User found:', user);
+    if (currentUserId) {
+      // Verificar que el usuario actual existe
+      const user = await this.userRepository.findOne({ where: { id: currentUserId } });
+      console.log('🔍 TenantsService.create - User found:', user);
 
-    if (!user) {
-      throw new NotFoundException('User not found');
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
     }
 
     // Verificar que el email no esté ya registrado como usuario
@@ -66,11 +68,14 @@ export class TenantsService {
       await this.roleUserService.create({ userId: savedUser.id, roleUuid: tenantRole.uuid });
     }
 
-    const tenantData = {
+    const tenantData: DeepPartial<Tenant> = {
       ...createTenantDto,
-      owner_id: currentUserId,
       user_id: savedUser.id, // Asociar el usuario creado
     };
+
+    if (currentUserId) {
+      tenantData.owner_id = currentUserId;
+    }
 
     console.log('🔍 TenantsService.create - Tenant data to save:', tenantData);
 
@@ -143,6 +148,32 @@ export class TenantsService {
     return tenant;
   }
 
+  async findOneWithoutOwnerCheck(id: string): Promise<Tenant> {
+    const tenant = await this.tenantRepository.findOne({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        gov_id: true,
+        birth_date: true,
+        income: true,
+        notes: true,
+        owner_id: true,
+        user_id: true,
+        created_at: true,
+        updated_at: true
+      }
+    });
+
+    if (!tenant) {
+      throw new NotFoundException(`Tenant with ID "${id}" not found`);
+    }
+
+    return tenant;
+  }
+
   async update(id: string, updateTenantDto: UpdateTenantDto, currentUserId: string): Promise<Tenant> {
     const tenant = await this.findOne(id, currentUserId);
 
@@ -209,5 +240,66 @@ export class TenantsService {
     }
 
     return password;
+  }
+
+  /**
+   * Crea un tenant automáticamente para una invitación de tenant share
+   */
+  async createTenantForInvitation(email: string, ownerId: string): Promise<Tenant & { tempPassword: string }> {
+    console.log('🔍 TenantsService.createTenantForInvitation - email:', email);
+    console.log('🔍 TenantsService.createTenantForInvitation - ownerId:', ownerId);
+
+    // Verificar que el email no esté ya registrado como usuario
+    const existingUser = await this.userRepository.findOne({
+      where: { email: email }
+    });
+
+    if (existingUser) {
+      throw new ForbiddenException('Ya existe un usuario con este email');
+    }
+
+    // Generar contraseña aleatoria
+    const randomPassword = this.generateRandomPassword();
+    const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+    // Extraer nombre del email (parte antes del @)
+    const nameFromEmail = email.split('@')[0];
+
+    // Crear usuario para el inquilino
+    const tenantUser = this.userRepository.create({
+      name: nameFromEmail,
+      email: email,
+      password: hashedPassword,
+    });
+
+    const savedUser = await this.userRepository.save(tenantUser);
+    console.log('✅ Usuario creado para inquilino invitado:', savedUser.id);
+
+    // Asignar rol 'tenant' automáticamente
+    const tenantRole = await this.roleRepository.findOne({ where: { name: 'tenant' } });
+    if (tenantRole) {
+      await this.roleUserService.create({ userId: savedUser.id, roleUuid: tenantRole.uuid });
+    }
+
+    const tenantData: DeepPartial<Tenant> = {
+      name: nameFromEmail,
+      email: email,
+      phone: 'N/A', // Valor por defecto para evitar el error NOT NULL
+      owner_id: ownerId,
+      user_id: savedUser.id,
+    };
+
+    console.log('🔍 TenantsService.createTenantForInvitation - Tenant data to save:', tenantData);
+
+    const tenant = this.tenantRepository.create(tenantData);
+    const savedTenant = await this.tenantRepository.save(tenant);
+
+    console.log('✅ Tenant creado para invitación:', savedTenant.id);
+
+    // Retornar el tenant con la contraseña temporal
+    return {
+      ...savedTenant,
+      tempPassword: randomPassword
+    };
   }
 }

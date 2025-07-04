@@ -20,6 +20,7 @@ import { SessionsModule } from './sessions/sessions.module';
 import { BackAccountModule } from './back_account/back_account.module';
 import { RoleUserModule } from './role_user/role_user.module';
 import { TenantScoresModule } from './tenant_scores/tenant_scores.module';
+import { TenantSharesModule } from './tenant_shares/tenant_shares.module';
 // Load environment variables from .env file
 
 
@@ -45,10 +46,11 @@ import { TenantScoresModule } from './tenant_scores/tenant_scores.module';
     UsersModule,
     AuthModule,
     PropertiesModule,
-    ContractsModule,
     TenantsModule,
-    OwnerModule,
+    TenantSharesModule,
+    ContractsModule,
     RentsModule,
+    OwnerModule,
     PropertyTypesModule,
     CountriesModule,
     PaymentModule,

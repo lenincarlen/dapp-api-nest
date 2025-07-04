@@ -13,6 +13,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserRole } from '../role_user/entities/role_user.entity';
 import { Role } from '../roles/entities/role.entity';
+import { TenantSharesService } from '../tenant_shares/tenant_shares.service';
+import { TenantShareStatus } from '../tenant_shares/entities/tenant-share.entity';
+import { TenantsService } from '../tenants/tenants.service';
 
 @Injectable()
 export class AuthService {
@@ -23,6 +26,8 @@ export class AuthService {
     private userRoleRepository: Repository<UserRole>,
     @InjectRepository(Role)
     private roleRepository: Repository<Role>,
+    private tenantSharesService: TenantSharesService,
+    private tenantsService: TenantsService,
   ) { }
 
   async register(registerDto: RegisterDto) {
@@ -33,15 +38,41 @@ export class AuthService {
     });
 
     // Asignar rol de propietario por defecto
-    const ownerRole = await this.roleRepository.findOne({
-      where: { name: 'owner' }
-    });
+    let assignedRole: Role;
+    const existingTenantShare = await this.tenantSharesService.findByInvitedEmail(registerDto.email);
 
-    if (ownerRole) {
+    if (existingTenantShare && existingTenantShare.status === TenantShareStatus.PENDING_INVITE) {
+      assignedRole = await this.roleRepository.findOne({ where: { name: 'tenant' } });
+      if (!assignedRole) {
+        throw new BadRequestException('Tenant role not found');
+      }
+      // Create a tenant entry for the new user
+      const tenant = await this.tenantsService.create({
+        email: user.email,
+        name: user.name,
+        phone: '', // Placeholder
+        gov_id: '', // Placeholder
+        birth_date: '', // Placeholder
+        income: 0, // Placeholder
+        notes: '', // Placeholder
+      }, undefined); // Pass undefined for currentUserId as it's a co-tenant registration
+      // Update the TenantShare with the new coTenantId and status
+      await this.tenantSharesService.update(existingTenantShare.id, {
+        co_tenant_id: tenant.id,
+        status: TenantShareStatus.ACTIVE,
+      });
+    } else {
+      assignedRole = await this.roleRepository.findOne({ where: { name: 'owner' } });
+      if (!assignedRole) {
+        throw new BadRequestException('Owner role not found');
+      }
+    }
+
+    if (assignedRole) {
       const userRole = this.userRoleRepository.create({
-      userId: user.id,
-      roleUuid: ownerRole.uuid,
-    });
+        userId: user.id,
+        roleUuid: assignedRole.uuid,
+      });
       await this.userRoleRepository.save(userRole);
     }
 

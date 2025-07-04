@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateContractDto, ContractStatus } from './dto/create-contract.dto';
@@ -11,6 +11,7 @@ export class ContractsService {
   constructor(
     @InjectRepository(Contracts)
     private contractsRepository: Repository<Contracts>,
+    @Inject(forwardRef(() => RentsService))
     private rentsService: RentsService,
   ) { }
 
@@ -26,7 +27,7 @@ export class ContractsService {
     const savedContract: Contracts = await this.contractsRepository.save(newContract);
 
     // Generar rentas mensuales automáticamente
-    if (savedContract.status === 'active') {
+    if (savedContract.status === ContractStatus.ACTIVE) {
       try {
         await this.rentsService.generateMonthlyRentsForContract(
           savedContract.id,
@@ -87,6 +88,25 @@ export class ContractsService {
     return await this.contractsRepository.find({
       where: { owner_id: ownerId },
     });
+  }
+
+  async findByTenant(tenantId: string): Promise<Contracts[]> {
+    return await this.contractsRepository.find({
+      where: { tenant_id: tenantId },
+      order: { created_at: 'DESC' },
+    });
+  }
+
+  async findActiveByTenant(tenantId: string): Promise<Contracts | null> {
+    const contract = await this.contractsRepository.findOne({
+      where: {
+        tenant_id: tenantId,
+        status: ContractStatus.ACTIVE
+      },
+      order: { created_at: 'DESC' },
+    });
+
+    return contract || null;
   }
 
   async findByStatus(status: ContractStatus): Promise<Contracts[]> {

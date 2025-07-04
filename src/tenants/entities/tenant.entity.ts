@@ -1,4 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToOne, JoinColumn, OneToMany } from 'typeorm';
+import { User } from '../../users/entities/user.entity';
+import { TenantShare } from '../../tenant_shares/entities/tenant-share.entity';
 
 @Entity('tenants')
 export class Tenant {
@@ -35,7 +37,13 @@ export class Tenant {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @UpdateDateColumn()
   updated_at: Date;
+
+  @OneToMany(() => TenantShare, tenantShare => tenantShare.mainTenant)
+  mainTenantShares: TenantShare[];
+
+  @OneToMany(() => TenantShare, tenantShare => tenantShare.coTenant)
+  coTenantShares: TenantShare[];
 }
 

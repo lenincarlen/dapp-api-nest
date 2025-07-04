@@ -7,6 +7,8 @@ import { AuthService } from './auth.service';
 import { jwtConstants } from './constants/jwt.constant';
 import { UserRole } from '../role_user/entities/role_user.entity';
 import { Role } from '../roles/entities/role.entity';
+import { TenantSharesModule } from '../tenant_shares/tenant_shares.module';
+import { TenantsModule } from '../tenants/tenants.module';
 
 @Module({
   imports: [
@@ -17,6 +19,8 @@ import { Role } from '../roles/entities/role.entity';
       secret: jwtConstants.secret,
       signOptions: { expiresIn: '1d' },
     }),
+    TenantSharesModule,
+    TenantsModule,
   ],
   controllers: [AuthController],
   providers: [AuthService],

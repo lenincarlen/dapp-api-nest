@@ -4,11 +4,12 @@ import { ContractsController } from './contracts.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Contracts } from './entities/contract.entity';
 import { RentsModule } from '../rents/rents.module';
+import { forwardRef } from '@nestjs/common';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Contracts]),
-    RentsModule,
+    forwardRef(() => RentsModule),
   ],
   controllers: [ContractsController],
   providers: [ContractsService],

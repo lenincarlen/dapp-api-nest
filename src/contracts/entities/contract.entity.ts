@@ -1,5 +1,6 @@
 import { ContractStatus, PaymentMethod } from '../dto/create-contract.dto';
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { TenantShare } from '../../tenant_shares/entities/tenant-share.entity';
 
 @Entity('contracts')
 export class Contracts {
@@ -52,14 +53,8 @@ export class Contracts {
   @UpdateDateColumn()
   updated_at: Date;
 
-  // Relaciones eliminadas para evitar errores de TypeORM
-  // @ManyToOne(() => any, { nullable: true })
-  // @JoinColumn({ name: 'tenant_id' })
-  // tenant?: any;
-
-  // @ManyToOne(() => any, { nullable: true })
-  // @JoinColumn({ name: 'property_id' })
-  // property?: any;
+  @OneToMany(() => TenantShare, tenantShare => tenantShare.contract)
+  tenantShares: TenantShare[];
 }
 
 export class Contract {

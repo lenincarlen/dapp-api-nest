@@ -1,8 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, UseGuards, Request } from '@nestjs/common';
 import { TenantSharesService } from './tenant_shares.service';
-import { CreateTenantShareDto } from './dto/create-tenant-share.dto';
+import { CreateTenantShareDto, CreateTenantShareInvitationDto } from './dto/create-tenant-share.dto';
 import { UpdateTenantShareDto } from './dto/update-tenant-share.dto';
 import { EmailService } from '../common/services/email.service';
+import { AuthGuard } from '../auth/guard/auth.guard';
+import { RolesGuard } from '../auth/guard/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { ActiveUser } from '../common/decorators/active-user.decorator';
+import { UserActiveInterface } from '../common/interfaces/user-active.interface';
 
 @Controller('tenant-shares')
 export class TenantSharesController {
@@ -17,6 +22,35 @@ export class TenantSharesController {
     return this.tenantSharesService.create(createTenantShareDto);
   }
 
+  @Post('invite')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('tenant')
+  @HttpCode(HttpStatus.CREATED)
+  async createInvitation(
+    @Body() createInvitationDto: CreateTenantShareInvitationDto,
+    @ActiveUser() user: UserActiveInterface
+  ) {
+    return this.tenantSharesService.createInvitation(createInvitationDto, user.id);
+  }
+
+  @Post('accept/:id')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('tenant')
+  @HttpCode(HttpStatus.OK)
+  async acceptInvitation(
+    @Param('id') id: string,
+    @ActiveUser() user: UserActiveInterface
+  ) {
+    return this.tenantSharesService.acceptInvitation(id, user.id);
+  }
+
+  @Get('pending-invitations')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('tenant')
+  async getPendingInvitations(@ActiveUser() user: UserActiveInterface) {
+    return this.tenantSharesService.getPendingInvitations(user.email);
+  }
+
   @Post('test-email')
   @HttpCode(HttpStatus.OK)
   async testEmail() {
@@ -25,7 +59,7 @@ export class TenantSharesController {
       await this.emailService.sendEmail(
         'test@example.com',
         'Test Email',
-        '<p>This is a test email to verify the email service is working.</p>'
+        '<p>This is a test email to verify the email service is working.</p></p>'
       );
       return {
         success: true,

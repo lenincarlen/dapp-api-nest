@@ -25,3 +25,16 @@ export class CreateTenantShareDto {
   @IsEnum(TenantShareStatus)
   status?: TenantShareStatus;
 }
+
+export class CreateTenantShareInvitationDto {
+  @IsUUID()
+  contract_id: string;
+
+  @IsEmail()
+  invitedEmail: string;
+
+  @IsNumber()
+  @Min(0.01)
+  @Max(100)
+  percentage: number;
+}
